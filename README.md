@@ -4,6 +4,8 @@ Este repositorio contiene el diseño, modelado e implementación de una base de 
 
 ---
 
+[![salida possible1](./assets/image1.png)]
+
 ## 📈 Ventajas Técnicas del Diseño
 
 El diseño actual evoluciona significativamente respecto a los modelos secuenciales tradicionales, incorporando las siguientes ventajas críticas evaluadas en entornos productivos:
@@ -20,6 +22,8 @@ El diseño actual evoluciona significativamente respecto a los modelos secuencia
    * **Búsqueda por Texto Completo Avanzada:** Integración de la extensión nativa `pg_trgm` con un índice especializado `GIN` sobre los títulos de los inmuebles para soportar búsquedas aproximadas de texto (*fuzzy matching*).
 
 ---
+
+[![salida possible2](./assets/imag2.png)]
 
 ## 📁 Estructura del Proyecto
 
