@@ -10,7 +10,7 @@ SET search_path TO inmobiliaria, public;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ============================================================
--- DOMINIOS PARA IDs TIPADOS (Requisito Avanzado del Profesor)
+-- DOMINIOS PARA IDs TIPADOS (Requisito Avanzado Corporativo)
 -- ============================================================
 CREATE DOMAIN inmobiliaria.ID_USUARIO AS CHAR(6) NOT NULL 
     CHECK (VALUE ~ '^U-\d{4}$');
@@ -65,7 +65,7 @@ CREATE TABLE codigos_postales (
 );
 
 -- ============================================================
--- 3. USUARIOS Y SEGURIDAD
+-- 3. USUARIOS Y SEGURIDAD (RBAC)
 -- ============================================================
 CREATE TABLE usuarios (
     id_usuario inmobiliaria.ID_USUARIO PRIMARY KEY,
@@ -117,7 +117,7 @@ CREATE TABLE propiedades (
     direccion_publica VARCHAR(255),
     operacion tipo_operacion_propiedad NOT NULL,
     precio NUMERIC(12, 2) NOT NULL CHECK (precio > 0),
-    superficie_m2 NUMERIC(10, 2) NOT NULL CHECK (superficie_m2 > 0),
+    surface_m2 NUMERIC(10, 2) NOT NULL CHECK (superficie_m2 > 0),
     habitaciones SMALLINT DEFAULT 0 CHECK (habitaciones >= 0),
     banos NUMERIC(4, 1) DEFAULT 1 CHECK (banos >= 0),
     estado tipo_estado_propiedad DEFAULT 'borrador',
@@ -162,7 +162,6 @@ CREATE TABLE favoritos (
     PRIMARY KEY (fk_usuario, fk_propiedad)
 );
 
--- Solución: Se usa CHAR(6) en lugar del dominio estricto NOT NULL para permitir NULL en anónimos
 CREATE TABLE mensajes (
     id_mensaje inmobiliaria.ID_MENSAJE PRIMARY KEY,
     fk_propiedad inmobiliaria.ID_PROPIEDAD NOT NULL REFERENCES propiedades(id_propiedad) ON DELETE CASCADE,
@@ -188,9 +187,50 @@ CREATE TABLE propiedad_estado_historial (
 );
 
 -- ============================================================
--- 7. RESTRICCIONES ADICIONALES E ÍNDICES
+-- 7. ÍNDICES DE ALTO RENDIMIENTO
 -- ============================================================
 CREATE UNIQUE INDEX uq_usuario_propiedad_favorita ON favoritos (fk_usuario, fk_propiedad);
 CREATE INDEX idx_propiedades_filtros ON propiedades (estado, operacion, precio) WHERE deleted_at IS NULL;
 CREATE INDEX idx_propiedades_geo ON propiedades (codigo_postal);
 CREATE INDEX idx_propiedades_trgm ON propiedades USING gin (titulo gin_trgm_ops);
+
+-- ============================================================
+-- 8. VISTAS (VIEWS) - CAPA DE ABSTRACCIÓN DE NEGOCIO
+-- ============================================================
+CREATE OR REPLACE VIEW inmobiliaria.vw_catalogo_publico AS
+SELECT 
+    p.id_propiedad AS inmueble_id,
+    p.referencia,
+    p.titulo,
+    p.descripcion,
+    p.direccion_publica AS direccion,
+    p.operacion,
+    p.precio,
+    p.superficie_m2,
+    p.habitaciones,
+    p.banos,
+    tp.nombre AS tipo_propiedad,
+    m.nombre AS municipio,
+    prov.nombre AS provincia,
+    p.codigo_postal
+FROM inmobiliaria.propiedades p
+JOIN inmobiliaria.tipos_propiedad tp ON p.tipo_propiedad_id = tp.id
+JOIN inmobiliaria.codigos_postales cp ON p.codigo_postal = cp.codigo
+JOIN inmobiliaria.municipios m ON cp.municipio_id = m.id
+JOIN inmobiliaria.provincias prov ON m.provincia_id = prov.id
+WHERE p.estado = 'publicada' AND p.activo = TRUE AND p.deleted_at IS NULL;
+
+CREATE OR REPLACE VIEW inmobiliaria.vw_kpi_municipios AS
+SELECT 
+    m.nombre AS municipio,
+    tp.nombre AS tipo_inmueble,
+    COUNT(p.id_propiedad) AS cantidad_total,
+    SUM(p.superficie_m2) AS superficie_acumulada_m2,
+    ROUND(AVG(p.precio), 2) AS precio_promedio,
+    ROUND(AVG(p.precio / p.superficie_m2), 2) AS densidad_euro_m2
+FROM inmobiliaria.propiedades p
+JOIN inmobiliaria.tipos_propiedad tp ON p.tipo_propiedad_id = tp.id
+JOIN inmobiliaria.codigos_postales cp ON p.codigo_postal = cp.codigo
+JOIN inmobiliaria.municipios m ON cp.municipio_id = m.id
+WHERE p.deleted_at IS NULL
+GROUP BY m.nombre, tp.nombre;

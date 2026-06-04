@@ -1,27 +1,23 @@
 -- ============================================================
--- PROYECTO INMOBILIARIO V2 - CONSULTAS ANALITICAS
+-- PROYECTO INMOBILIARIO V2 - CONSULTAS ANALÍTICAS (VIEWS)
 -- ============================================================
 
 SET search_path TO inmobiliaria, public;
 
--- [CONSULTA 1] Relacion de anuncios activos
+-- [CONSULTA 1] Catálogo público de anuncios activos (Consumido desde la VIEW)
 SELECT 
-    p.id_propiedad AS "Inmueble",
-    p.referencia AS "Referencia",
-    p.titulo AS "Titulo",
-    p.precio AS "Precio",
-    p.operacion AS "Operacion",
-    tp.nombre AS "Tipo de Propiedad",
-    m.nombre AS "Municipio",
-    prov.nombre AS "Provincia"
-FROM propiedades p
-JOIN tipos_propiedad tp ON p.tipo_propiedad_id = tp.id
-JOIN codigos_postales cp ON p.codigo_postal = cp.codigo
-JOIN municipios m ON cp.municipio_id = m.id
-JOIN provincias prov ON m.provincia_id = prov.id
-WHERE p.estado = 'publicada' AND p.activo = TRUE;
+    inmueble_id AS "Inmueble",
+    referencia AS "Referencia",
+    titulo AS "Titulo",
+    precio AS "Precio",
+    operacion AS "Operacion",
+    tipo_propiedad AS "Tipo Propiedad",
+    municipio AS "Municipio",
+    provincia AS "Provincia"
+FROM inmobiliaria.vw_catalogo_publico;
 
--- [CONSULTA 2] Usuarios y Roles (RBAC)
+
+-- [CONSULTA 2] Auditoría de Seguridad: Usuarios y Roles Asignados (RBAC)
 SELECT 
     u.id_usuario AS "ID Usuario",
     u.nombre AS "Nombre",
@@ -32,29 +28,26 @@ JOIN usuario_roles ur ON u.id_usuario = ur.fk_usuario
 JOIN roles r ON ur.rol_id = r.id
 ORDER BY u.id_usuario;
 
--- [CONSULTA 3] Matriz de Ocupacion por Municipio
-SELECT 
-    m.nombre AS "Municipio",
-    tp.nombre AS "Tipo de Inmueble",
-    COUNT(p.id_propiedad) AS "Cantidad",
-    SUM(p.superficie_m2) || ' m2' AS "Superficie Total",
-    TO_CHAR(AVG(p.precio), '999,999,999.00') || ' EUR' AS "Precio Promedio",
-    ROUND(AVG(p.precio / p.superficie_m2), 2) || ' EUR/m2' AS "Densidad Media"
-FROM propiedades p
-JOIN tipos_propiedad tp ON p.tipo_propiedad_id = tp.id
-JOIN codigos_postales cp ON p.codigo_postal = cp.codigo
-JOIN municipios m ON cp.municipio_id = m.id
-WHERE p.deleted_at IS NULL
-GROUP BY m.nombre, tp.nombre
-ORDER BY "Densidad Media" DESC;
 
--- [CONSULTA 4] Grafico de Barras ASCII
+-- [CONSULTA 3] Matriz de Ocupación y Densidad Regional (Consumido desde la VIEW Analítica)
+SELECT 
+    municipio AS "Municipio",
+    tipo_inmueble AS "Tipo de Inmueble",
+    cantidad_total AS "Cantidad",
+    superficie_acumulada_m2 || ' m2' AS "Superficie Total",
+    TO_CHAR(precio_promedio, '999,999,999.00') || ' EUR' AS "Precio Promedio",
+    densidad_euro_m2 || ' EUR/m2' AS "Densidad Media"
+FROM inmobiliaria.vw_kpi_municipios
+ORDER BY densidad_euro_m2 DESC;
+
+
+-- [CONSULTA 4] Grafico Estadistico: Distribucion de Superficie (Formato Universal)
 SELECT 
     referencia AS "Inmueble",
     operacion AS "Operacion",
-    LEFT(titulo, 25) || '...' AS "Titulo Corto",
+    LEFT(titulo, 22) || '...' AS "Titulo Corto",
     precio || ' EUR' AS "Precio",
-    RPAD('■', CAST(superficie_m2 / 5 AS INTEGER), '■') AS "Proporcion de Tamano (m2)"
+    '|' || REPEAT('=', CAST(superficie_m2 / 5 AS INTEGER)) || '>' AS "Proporcion de Tamano (m2)"
 FROM propiedades p
 WHERE deleted_at IS NULL
 ORDER BY superficie_m2 DESC;
