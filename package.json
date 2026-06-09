@@ -1,0 +1,32 @@
+{
+  "name": "inmob",
+  "version": "1.0.0",
+  "description": "Este repositorio contiene el diseño, modelado e implementación de una base de datos relacional avanzada para una plataforma de gestión inmobiliaria en España. La estructura ha sido optimizada siguiendo patrones corporativos estrictos y requerimientos metodológicos de alta seguridad física y lógica.",
+  "main": "index.js",
+  "scripts": {
+  "start": "node api-inmob/src/app.js",
+  "dev": "nodemon api-inmob/src/app.js",
+  "seed:masivo": "node api-inmob/src/config/seederMasivo.js"
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fernandurgt/UF2175_TA02_Proyecto_Estructura.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fernandurgt/UF2175_TA02_Proyecto_Estructura/issues"
+  },
+  "homepage": "https://github.com/fernandurgt/UF2175_TA02_Proyecto_Estructura#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "nodemon": "^3.1.14"
+  }
+}

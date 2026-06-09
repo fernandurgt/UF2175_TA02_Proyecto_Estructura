@@ -1,53 +1,80 @@
-# 🏢 Sistema de Gestión Inmobiliaria (v2.0)
+# API REST Inmobiliaria - Backend de Alto Rendimiento
 
-Este repositorio contiene el diseño, modelado e implementación de una base de datos relacional avanzada para una plataforma de gestión inmobiliaria en España. La estructura ha sido optimizada siguiendo patrones corporativos estrictos y requerimientos metodológicos de alta seguridad física y lógica.
+Backend transaccional y analítico desarrollado en **Node.js** y **Express**, acoplado a una base de datos relacional **PostgreSQL**. El sistema implementa un CRUD completo bajo buenas prácticas de desarrollo, controladores blindados contra fallos inyectados (`crash-safe`) y consultas dinámicas parametrizadas con protección nativa contra SQL Injection.
 
----
+## 🚀 Características Principales
 
-[![salida possible1](./assets/image1.png)]
-
-## 📈 Ventajas Técnicas del Diseño
-
-El diseño actual evoluciona significativamente respecto a los modelos secuenciales tradicionales, incorporando las siguientes ventajas críticas evaluadas en entornos productivos:
-
-1. **Dominios de Datos y Claves Tipadas (`CREATE DOMAIN`):**
-   * Las propiedades se identifican con el patrón `P-XXXX`, los usuarios con `U-XXXX` y los mensajes con `M-XXXX`. Esto previene errores de inserción involuntaria de IDs cruzados en la capa de persistencia y facilita la auditoría visual de registros de logs.
-
-2. **Control de Accesos Basado en Roles Estricto (RBAC):**
-   * Separación total entre la entidad `usuarios` y los privilegios operativos (`roles`) mediante una tabla intermedia normalizada (`usuario_roles`), permitiendo la asignación dinámica de múltiples perfiles (`ADMIN`, `AGENTE`, `CLIENTE`).
-
-3. **Garantía de Integridad y Robustez Operativa:**
-   * **Índices con Funciones (`LOWER`):** Bloquea errores de duplicidad donde e-mails con variaciones de mayúsculas puedan registrarse como cuentas separadas.
-   * **Índices Parciales Condicionales:** Optimización de búsquedas mediante índices que solo procesan registros activos (`WHERE deleted_at IS NULL`), acelerando las respuestas del portal público.
-   * **Búsqueda por Texto Completo Avanzada:** Integración de la extensión nativa `pg_trgm` con un índice especializado `GIN` sobre los títulos de los inmuebles para soportar búsquedas aproximadas de texto (*fuzzy matching*).
+- **CRUD Completo de Propiedades:** Persistencia e interacción transaccional mediante endpoints RESTful (`GET`, `POST`, `PUT`, `DELETE`).
+- **Borrado Lógico (Soft Delete):** Implementación de auditoría mediante la columna `deleted_at`, asegurando la integridad referencial y el histórico de métricas.
+- **Filtros Analíticos Avanzados:** Búsqueda adaptativa mediante operadores de coincidencia parcial (`ILIKE`), segmentación por tipo de operación y límites de precio.
+- **Paginación Dinámica Indexada:** Sistema de paginación robusto basado en cursores dinámicos (`LIMIT` y `OFFSET`) optimizado para grandes volúmenes de datos.
+- **Poblado Masivo Automatizado (Stress Testing):** Script de inserción masiva capaz de inyectar miles de registros indexados para pruebas de rendimiento en el catálogo.
 
 ---
 
-[![salida possible2](./assets/imag2.png)]
+## 🛠️ Stack Tecnológico
 
-## 📁 Estructura del Proyecto
-
-El ecosistema se despliega de forma modular garantizando un pipeline idempotente y limpio:
-
-* **`01_schema.sql`**: Definición de la arquitectura física de datos, creación de esquemas, tipos enumerados (`ENUM`), dominios tipados, tablas con restricciones complejas e índices de alta velocidad.
-* **`02_seed.sql`**: Script de carga inicial masiva de datos normalizados que simulan un entorno real en ciudades clave como Barcelona, Madrid y Sevilla.
-* **`03_queries.sql`**: Consultas analíticas de negocio complejas de alto rendimiento (auditoría RBAC, reportes públicos, cálculo dinámico del coste medio por metro cuadrado e histogramas de superficie).
+- **Entorno de Ejecución:** Node.js (v24.x)
+- **Framework Web:** Express.js
+- **Motor de Base de Datos:** PostgreSQL
+- **Controlador de Base de Datos:** `pg` (Pool de conexiones nativas)
+- **Gestión de Entorno:** Dotenv
 
 ---
 
-## ⚙️ Instrucciones de Despliegue Automatizado
+## 📂 Arquitectura del Proyecto
 
-Para limpiar, estructurar y poblar la base de datos de manera secuencial desde su consola de PowerShell, ejecute el siguiente bloque de comandos:
+```text
+api-inmob/
+├── src/
+│   ├── config/
+│   │   ├── db.js             # Configuración del Pool de PostgreSQL
+│   │   └── seederMasivo.js   # Script automatizado de carga de datos
+│   ├── controllers/
+│   │   └── propiedad.js      # Controladores lógicos del CRUD (Safe-Crash)
+│   ├── routes/
+│   │   └── propiedades.js    # Definición de endpoints y enrutamiento REST
+│   └── app.js                # Inicialización y Middlewares de Express
+├── .env                      # Variables de entorno (Gobernanza de credenciales)
+└── package.json              # Gestión de dependencias y scripts de ejecución
 
-```powershell
-# 1. Configurar la codificación de la consola a UTF-8
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+```
 
-# 2. Crear la arquitectura y aplicar restricciones del esquema
-& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -p 5434 -d inmobiliaria_db -f 01_schema.sql
-
-# 3. Poblar el entorno de datos e interacciones analíticas
-& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -p 5434 -d inmobiliaria_db -f 02_seed.sql
-
-# 4. Lanzar el panel analítico y auditorías de datos
-& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -p 5434 -d inmobiliaria_db -f 03_queries.sql
+## 🔧 Configuración y Ejecución
+1. **Clonar el Repositorio:**
+   ```bash
+   git clone
+   cd api-inmob
+   ```
+2. **Instalar Dependencias:**
+   ```bash
+   npm install
+   ```
+3. **Configurar Variables de Entorno:**
+   - Crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+   ```env      
+   PORT=3000
+   DB_USER=postgres
+   DB_PASSWORD=ajh_pass
+   DB_HOST=localhost
+   DB_PORT=5434
+   DB_DATABASE=inmobiliaria_db
+   ```
+4. **Ejecutar el Servidor:**
+   ```bash
+   npm start
+   ```            
+5. **Poblar la Base de Datos (Opcional para Pruebas de Rendimiento):**
+   ```bash
+   node src/config/seederMasivo.js
+   ```
+## 📈 Pruebas de Rendimiento
+- **Carga Masiva:** El script `seederMasivo.js` permite insertar miles de registros de propiedades con datos aleatorios, ideal para evaluar la escalabilidad y el rendimiento del sistema bajo condiciones de alta demanda.
+- **Endpoints Analíticos:** Se recomienda realizar pruebas de carga utilizando herramientas como `Apache JMeter` o `Postman` para validar la eficiencia de los filtros analíticos y la paginación dinámica en escenarios de tráfico intenso.
+---## 🛡️ Seguridad y Buenas Prácticas
+- **Protección contra SQL Injection:** Todas las consultas a la base de datos utilizan parámetros parametrizados, garantizando la seguridad de las operaciones y la integridad de los datos.
+- **Controladores Crash-Safe:** Implementación de manejo de errores robusto en los controladores, asegurando que el sistema no se caiga ante entradas maliciosas o fallos inesperados.
+- **Borrado Lógico:** La estrategia de soft delete permite mantener un historial completo de las propiedades, facilitando auditorías y análisis históricos sin comprometer la integridad de los datos.
+---## 📊 Métricas y Monitoreo
+- **Auditoría de Operaciones:** Implementación de logs detallados para cada operación CRUD, permitiendo un seguimiento exhaustivo de las interacciones con el sistema.
+- **Monitoreo de Rendimiento:** Se recomienda integrar herramientas de monitoreo como `New Relic` o `Datadog` para obtener insights en tiempo real sobre el rendimiento del backend y la base de datos, especialmente bajo cargas elevadas.

@@ -163,3 +163,13 @@ CREATE TABLE propiedad_estado_historial (
 CREATE INDEX idx_propiedades_filtros ON propiedades (estado, operacion, precio) WHERE deleted_at IS NULL;
 CREATE INDEX idx_propiedades_geo ON propiedades (codigo_postal);
 CREATE INDEX idx_propiedades_trgm ON propiedades USING gin (titulo gin_trgm_ops);
+
+SELECT COUNT(*) FROM inmobiliaria.propiedades;
+
+SELECT 
+    COUNT(*) AS total_alquileres,
+    MIN(precio) AS precio_minimo,
+    MAX(precio) AS precio_maximo,
+    ROUND(AVG(precio), 2) AS precio_medio
+FROM inmobiliaria.propiedades
+WHERE operacion = 'alquiler' AND deleted_at IS NULL;
